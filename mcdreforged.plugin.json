@@ -1,0 +1,14 @@
+{
+  "id": "tasklist",
+  "version": "1.0.0",
+  "name": "TaskList",
+  "description": "Plugin para una lista de tareas",
+  "author": "TheVugx",
+  "link": "https://github.com/TheVugx",
+  "dependencies": {
+    "mcdreforged": "2.13.2"  
+  },
+  "entrypoint": "tasklist"
+}
+
+
