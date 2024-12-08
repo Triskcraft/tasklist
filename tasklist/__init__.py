@@ -85,22 +85,25 @@ def display_msg(src: CommandSource):
 
 def display_list(src: CommandSource, list_name=None):
     tasks = dict([('main', list_main), ('generic', list_generic)])
-
+    
+    
     if list_name is None:
         src.reply("§6§lLista de tareas: §emain §7y §egeneric§7.\n")
         for list_name, task_list in tasks.items():
-            src.reply(f"§e§l{list_name}:\n")
+            task_button = RText(" §e[+]").set_hover_text("Agregar nueva tarea").set_click_event(
+                RAction.suggest_command, f"{Prefix} add {list_name} ")
+            src.reply(RTextList(f"§e§l{list_name}",task_button," §e§l:\n"))
             show_task_list(src, task_list)
             src.reply("\n")
     elif list_name in tasks:
         src.reply(f"§6§lLista de tareas: §e{list_name}§7.\n")
         show_task_list(src, tasks[list_name])
     else:
-        src.reply("§cLista de tareas no encontrada. Usa §emain§7 o §egeneric§7.")
+        src.reply("§cLista de tareas no encontrada. Usa §emainc7 o §egeneric§7.")
 
 def show_task_list(src: CommandSource, task_list):
     if not task_list:
-        src.reply("§7No hay tareas en esta lista.")
+        src.reply("§cNo hay tareas en esta lista.")
     else:
         for task in task_list:
             if task["coords"]["dim"] == 'overworld':
@@ -123,7 +126,7 @@ def show_task_list(src: CommandSource, task_list):
                 RAction.suggest_command, f"{Prefix} modify {task['name']} comment ")
             delete_button = RText(" §c[-]§7").set_hover_text("Eliminar tarea").set_click_event(
                 RAction.suggest_command, f"{Prefix} delete {task['name']} ")
-            tp_button = RText("  §9[tp]").set_hover_text("tp a coordenadas del proyecto").set_click_event(
+            tp_button = RText(" §9[tp]").set_hover_text("tp a coordenadas del proyecto").set_click_event(
                 RAction.run_command, f"/tp {task['coords']['x']} {task['coords']['y']} {task['coords']['z']}")
             waypoint_button = RText(' §b[+v]').set_hover_text('§bCtrl + clic para añadir waypoint').set_click_event(
 			    RAction.run_command, f"/newWaypoint x:{task['coords']['x']}, y:{task['coords']['y']}, z:{task['coords']['z']}, dim:{task['coords']['dim']}")
@@ -133,10 +136,10 @@ def show_task_list(src: CommandSource, task_list):
 
 def get_coords(src: CommandSource, server: PluginServerInterface):
     player = src.player
-    strcords = server.rcon_query(f'data get entity {player} Pos')
-    strdim = server.rcon_query(f'data get entity {player} Dimension')
-    dim = re.search(r'"minecraft:(.*?)"', strdim).group(1)
-    coords = [int(float(num)) for num in re.findall(r'-?\d+\.?\d*(?:[eE][+-]?\d+)?', strcords)]
+    coordsstr = re.search(r'\[([^\]]+)\]', server.rcon_query('data get entity {} Pos'.format(player)))
+    dim = re.search(r'"minecraft:([^"]+)"',server.rcon_query('data get entity {} Dimension'.format(player))).group(1)
+    print(dim)
+    coords = [int(float(num)) for num in re.findall(r'-?\d+\.?\d*(?:[eE][+-]?\d+)?', coordsstr.group(1))]
     return({'x': coords[0],'y': coords[1],'z': coords[2], 'dim': dim})
 
 def add_task(src: CommandSource, server: PluginServerInterface, list, task_name, task_details):
@@ -144,7 +147,7 @@ def add_task(src: CommandSource, server: PluginServerInterface, list, task_name,
     coords = get_coords(src, server)
 
     list.append({'name': task_name, 'details': task_details, 'user': player, 'coords': coords,'comment':[]})
-    src.reply(f"§aTarea '{task_name}' Agregada Correctamente.")
+    src.reply(f"§aTarea {task_name} Agregada Correctamente.")
     save_tasks({'main': list_main, 'generic': list_generic})
 
 def modify_task(src: CommandSource, server: PluginServerInterface, attribute, task_name, data):
@@ -224,7 +227,7 @@ def delete_task(src: CommandSource, task_name):
         for task in task_list:
             if task['name'] == task_name:
                 task_list.remove(task)
-                src.reply(f"§4Tarea §b{task_name}§c eliminada.")
+                src.reply(f"§cTarea §b{task_name}§c eliminada.")
                 save_tasks({'main': list_main, 'generic': list_generic})
                 return
     
@@ -239,11 +242,11 @@ def delete_comment(src: CommandSource, task_name, comment_index):
                 if 'comment' in task and isinstance(task['comment'], list):
                     try:
                         deleted_comment = task['comment'].pop(comment_index)
-                        src.reply(f"§4Comentario eliminado: {deleted_comment}")
+                        src.reply(f"§cComentario eliminado: {deleted_comment}")
                     except IndexError:
-                        src.reply(f"§cNo se pudo eliminar el comentario en la posición {comment_index - 1}.")
+                        src.reply(f"No se pudo eliminar el comentario en la posición {comment_index - 1}")
                 else:
-                    src.reply(f"§cLa tarea §b{task_name}§c no tiene comentarios.")
+                    src.reply(f"§cLa tarea §b{task_name}§c no tiene comentarios")
                 return
     
     src.reply(f"Tarea {task_name} no encontrada.")
